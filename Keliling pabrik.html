@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Terpadu Pabrik Tebu</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 15px; background-color: #f4f7f6; color: #333; }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+        .sub-header { text-align: center; font-size: 12px; color: #7f8c8d; margin-bottom: 15px; }
+        
+        /* MULTI TAB NAVIGASI NAV BAR */
+        .tab-container { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 95px; padding: 10px 4px; background: #bdc3c7; color: #2c3e50; border: none; font-weight: bold; font-size: 11px; border-radius: 6px 6px 0 0; cursor: pointer; text-align: center; }
+        .tab-btn.active { background: #2c3e50; color: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: white; padding: 15px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-weight: bold; margin-bottom: 3px; font-size: 13px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input[readonly] { background-color: #eef2f3; cursor: not-allowed; font-weight: bold; color: #27ae60; }
+        
+        .datetime-group { display: flex; gap: 10px; }
+        .datetime-group input { flex: 2; }
+        .datetime-group select { flex: 1; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 14px; }
+        .btn-submit { background-color: #27ae60; }
+        .btn-update { background-color: #e67e22; }
+        .btn-cancel { background-color: #7f8c8d; }
+        .btn-export { background-color: #2980b9; }
+        .btn-backup { background-color: #8e44ad; }
+        .btn-restore { background-color: #d35400; }
+        .btn-delete { background-color: #c0392b; }
+        .btn-action { border: none; padding: 4px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; color: white; text-decoration: none; }
+        .btn-wa { background-color: #25D366; }
+        .btn-edit-row { background-color: #f39c12; }
+        .btn-delete-row { background-color: #e74c3c; }
+        .btn-delete-day { background-color: #c0392b; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; float: right; }
+        
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; vertical-align: middle; white-space: nowrap; }
+        th { background-color: #34495e; color: white; }
+        .header-hari { background-color: #d5dbdb; font-weight: bold; text-align: left; padding: 8px 12px; font-size: 13px; color: #2c3e50; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status { font-size: 11px; text-align: center; color: #27ae60; margin-top: 5px; }
+        .action-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .filter-box { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: bold; }
+        .highlight-col { background-color: #eafaf1; font-weight: bold; }
+        .info-box { background-color: #e8f4f8; border-left: 4px solid #2980b9; padding: 8px; font-size: 12px; margin-bottom: 10px; }
+        .section-title { font-weight: bold; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 3px; margin: 15px 0 10px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <h2>Sistem Terpadu Pabrik Tebu</h2>
+    <div class="sub-header">Pencatatan Gilingan, Evaporasi & Kimia (Siklus 07:00 - 06:00 WIB)</div>
+
+    <!-- TOMBOL NAVIGASI TAB -->
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('tabTebu')">📊 1. Giling</button>
+        <button class="tab-btn" onclick="switchTab('tabNira')">🧪 2. Nira</button>
+        <button class="tab-btn" onclick="switchTab('tabRpm')">⚙️ 3. RPM</button>
+        <button class="tab-btn" onclick="switchTab('tabHidrolik')">🏗️ 4. Hidrolik</button>
+        <button class="tab-btn" onclick="switchTab('tabAmpere')">⚡ 5. Ampere</button>
+        <button class="tab-btn" onclick="switchTab('tabEvap')">🔥 6. Evaporasi</button>
+        <button class="tab-btn" onclick="switchTab('tabKimia')">🔬 7. Kimia</button>
+    </div>
+
+    <!-- ================= TAB 1: GILING TEBU ================= -->
+    <div id="tabTebu" class="tab-content active">
+        <div class="card">
+            <h3 id="formTitle1" style="margin-top:0; font-size: 15px;">Input Data Jam Pengamatan (Giling Tebu)</h3>
+            <form id="tebuForm">
+                <input type="hidden" id="editId1" value="">
+                <div class="form-group">
+                    <label>Tanggal & Jam Pengamatan:</label>
+                    <div class="datetime-group">
+                        <input type="date" id="tglPengamatan1" required>
+                        <select id="jamPengamatan1" required></select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Tebu Masuk (Ton):</label><input type="number" step="0.01" id="tonMasuk" placeholder="0.00" required></div>
+                <div class="form-group"><label>Jumlah Lori:</label><input type="number" id="jumlahLori" placeholder="0" required></div>
+                <div class="form-group"><label>Jumlah Truk:</label><input type="number" id="jumlahTruk" placeholder="0" required></div>
+                <div class="form-group"><label>Tebu Giling Jam Ini (Ton):</label><input type="number" step="0.01" id="tonGiling" placeholder="0.00" required></div>
+                <div class="btn-group">
+                    <button type="submit" id="btnSubmit1" class="btn-submit">Simpan Data Giling</button>
+                    <button type="button" id="btnCancel1" class="btn-cancel" style="display:none;" onclick="batalEdit1()">Batal Edit</button>
+                </div>
+            </form>
+            <div id="statusStorage" class="status"></div>
+        </div>
+
+        <div class="card">
+            <div class="action-bar">
+                <div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal1" style="width: auto; padding: 4px;" onchange="tampilkanData1()"> <button onclick="resetFilter1()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button onclick="exportToCSV1()" class="btn-export">Export CSV</button>
+                    <button onclick="backupData()" class="btn-backup">📥 Backup Semua</button>
+                    <button onclick="triggerRestore()" class="btn-restore">📤 Restore Semua</button>
+                    <input type="file" id="fileRestore" accept=".json" style="display: none;" onchange="restoreData(event)">
+                    <button onclick="hapusSemuaData()" class="btn-delete">Hapus Semua</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Jam</th><th>Masuk (Ton)</th><th>Lori</th><th>Truk</th><th>Giling (Ton)</th><th style="background-color: #27ae60;">Total Giling s/d (Ton)</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody id="tabelBody1"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 2: NIRA MENTAH & IMBIBISI ================= -->
+    <div id="tabNira" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle2" style="margin-top:0; font-size: 15px;">Input Data Nira Mentah & Imbibisi</h3>
+            <div class="info-box">💡 <b>Rumus Otomatis:</b> % Tebu = (Ton Nira × 1.03) ÷ Ton Tebu Giling (Tab 1) | % Imbibisi = ((Ton Imbibisi × 0.995) ÷ Ton Tebu Giling) × 100</div>
+            <form id="niraForm">
+                <input type="hidden" id="editId2" value="">
+                <div class="form-group">
+                    <label>Tanggal & Jam Pengamatan:</label>
+                    <div class="datetime-group">
+                        <input type="date" id="tglPengamatan2" required onchange="hitungSemuaOtomatis()">
+                        <select id="jamPengamatan2" required onchange="hitungSemuaOtomatis()"></select>
+                    </div>
+                </div>
+                <div class="section-title">🧪 DATA NIRA MENTAH</div>
+                <div class="form-group"><label>Jumlah Bak Nira Mentah:</label><input type="number" id="jumlahBak" placeholder="0" required></div>
+                <div class="form-group"><label>Ton Nira Mentah:</label><input type="number" step="0.01" id="tonNira" placeholder="0.00" required oninput="hitungSemuaOtomatis()"></div>
+                <div class="form-group"><label>% Koreksi Kotoran Nira Mentah:</label><input type="number" step="0.01" id="persenKotoran" placeholder="0.00 %" required></div>
+                <div class="form-group"><label>% Tebu (Otomatis):</label><input type="text" id="persenTebu" placeholder="Otomatis terhitung" readonly></div>
+
+                <div class="section-title">💧 DATA IMBIBISI</div>
+                <div class="form-group"><label>Jumlah Bak Imbibisi:</label><input type="number" id="jumlahBakImbibisi" placeholder="0" required></div>
+                <div class="form-group"><label>Ton Imbibisi:</label><input type="number" step="0.01" id="tonImbibisi" placeholder="0.00" required oninput="hitungSemuaOtomatis()"></div>
+                <div class="form-group"><label>% Imbibisi (Otomatis):</label><input type="text" id="persenImbibisi" placeholder="Otomatis terhitung" readonly></div>
+                <!-- SUHU IMBIBISI DIPINDAHKAN KELUAR SETELAH PERSEN IMBIBISI -->
+                <div class="form-group"><label>Suhu Imbibisi (°C):</label><input type="number" step="0.1" id="suhuImbibisi" placeholder="0.0 °C" required></div>
+
+                <div class="btn-group">
+                    <button type="submit" id="btnSubmit2" class="btn-submit">Simpan Data Nira</button>
+                    <button type="button" id="btnCancel2" class="btn-cancel" style="display:none;" onclick="batalEdit2()">Batal Edit</button>
+                </div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal2" style="width: auto; padding: 4px;" onchange="tampilkanData2()"><button onclick="resetFilter2()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Jam</th><th>Jml Bak Nira</th><th>Ton Nira</th><th>% Kotoran</th><th style="background-color: #27ae60;">% Tebu</th><th>Jml Bak Imbibisi</th><th>Ton Imbibisi</th><th style="background-color: #2980b9; color: white;">% Imbibisi</th><th>Suhu (°C)</th><th>Aksi</th></tr></thead>
+                    <tbody id="tabelBody2"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 3: RPM GILINGAN ================= -->
+    <div id="tabRpm" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle3" style="margin-top:0; font-size: 15px;">Input Data RPM Gilingan 1 - 5</h3>
+            <form id="rpmForm">
+                <input type="hidden" id="editId3" value="">
+                <div class="form-group"><label>Tanggal & Jam Pengamatan:</label><div class="datetime-group"><input type="date" id="tglPengamatan3" required><select id="jamPengamatan3" required></select></div></div>
+                <div class="section-title">⚙️ PUTARAN GILINGAN (RPM)</div>
+                <div class="form-group"><label>RPM Gilingan 1:</label><input type="number" step="0.1" id="rpm1" placeholder="0.0" required></div>
+                <div class="form-group"><label>RPM Gilingan 2:</label><input type="number" step="0.1" id="rpm2" placeholder="0.0" required></div>
+                <div class="form-group"><label>RPM Gilingan 3:</label><input type="number" step="0.1" id="rpm3" placeholder="0.0" required></div>
+                <div class="form-group"><label>RPM Gilingan 4:</label><input type="number" step="0.1" id="rpm4" placeholder="0.0" required></div>
+                <div class="form-group"><label>RPM Gilingan 5:</label><input type="number" step="0.1" id="rpm5" placeholder="0.0" required></div>
+                <div class="btn-group"><button type="submit" id="btnSubmit3" class="btn-submit">Simpan Data RPM</button><button type="button" id="btnCancel3" class="btn-cancel" style="display:none;" onclick="batalEdit3()">Batal Edit</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal3" style="width: auto; padding: 4px;" onchange="tampilkanData3()"><button onclick="resetFilter3()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table><thead><tr><th>Jam</th><th>RPM Gil 1</th><th>RPM Gil 2</th><th>RPM Gil 3</th><th>RPM Gil 4</th><th>RPM Gil 5</th><th>Aksi</th></tr></thead><tbody id="tabelBody3"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 4: HIDROLIK GILINGAN ================= -->
+    <div id="tabHidrolik" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle4" style="margin-top:0; font-size: 15px;">Input Data Tekanan Hidrolik Gilingan 1 - 5</h3>
+            <form id="hidrolikForm">
+                <input type="hidden" id="editId4" value="">
+                <div class="form-group"><label>Tanggal & Jam Pengamatan:</label><div class="datetime-group"><input type="date" id="tglPengamatan4" required><select id="jamPengamatan4" required></select></div></div>
+                <div class="section-title">🏗️ TEKANAN HIDROLIK GILINGAN</div>
+                <div class="form-group"><label>Hidrolik Gilingan 1:</label><input type="number" step="0.1" id="hidrolik1" placeholder="0.0" required></div>
+                <div class="form-group"><label>Hidrolik Gilingan 2:</label><input type="number" step="0.1" id="hidrolik2" placeholder="0.0" required></div>
+                <div class="form-group"><label>Hidrolik Gilingan 3:</label><input type="number" step="0.1" id="hidrolik3" placeholder="0.0" required></div>
+                <div class="form-group"><label>Hidrolik Gilingan 4:</label><input type="number" step="0.1" id="hidrolik4" placeholder="0.0" required></div>
+                <div class="form-group"><label>Hidrolik Gilingan 5:</label><input type="number" step="0.1" id="hidrolik5" placeholder="0.0" required></div>
+                <div class="btn-group"><button type="submit" id="btnSubmit4" class="btn-submit">Simpan Data Hidrolik</button><button type="button" id="btnCancel4" class="btn-cancel" style="display:none;" onclick="batalEdit4()">Batal Edit</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal4" style="width: auto; padding: 4px;" onchange="tampilkanData4()"><button onclick="resetFilter4()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table><thead><tr><th>Jam</th><th>Hidrolik Gil 1</th><th>Hidrolik Gil 2</th><th>Hidrolik Gil 3</th><th>Hidrolik Gil 4</th><th>Hidrolik Gil 5</th><th>Aksi</th></tr></thead><tbody id="tabelBody4"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 5: AMPERE GILINGAN ================= -->
+    <div id="tabAmpere" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle5" style="margin-top:0; font-size: 15px;">Input Data Ampere Gilingan 1 - 5</h3>
+            <form id="ampereForm">
+                <input type="hidden" id="editId5" value="">
+                <div class="form-group"><label>Tanggal & Jam Pengamatan:</label><div class="datetime-group"><input type="date" id="tglPengamatan5" required><select id="jamPengamatan5" required></select></div></div>
+                <div class="section-title">⚡ BEBAN LISTRIK (AMPERE) GILINGAN</div>
+                <div class="form-group"><label>Ampere Gilingan 1:</label><input type="number" step="0.1" id="ampere1" placeholder="0.0 A" required></div>
+                <div class="form-group"><label>Ampere Gilingan 2:</label><input type="number" step="0.1" id="ampere2" placeholder="0.0 A" required></div>
+                <div class="form-group"><label>Ampere Gilingan 3:</label><input type="number" step="0.1" id="ampere3" placeholder="0.0 A" required></div>
+                <div class="form-group"><label>Ampere Gilingan 4:</label><input type="number" step="0.1" id="ampere4" placeholder="0.0 A" required></div>
+                <div class="form-group"><label>Ampere Gilingan 5:</label><input type="number" step="0.1" id="ampere5" placeholder="0.0 A" required></div>
+                <div class="btn-group"><button type="submit" id="btnSubmit5" class="btn-submit">Simpan Data Ampere</button><button type="button" id="btnCancel5" class="btn-cancel" style="display:none;" onclick="batalEdit5()">Batal Edit</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal5" style="width: auto; padding: 4px;" onchange="tampilkanData5()"><button onclick="resetFilter5()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table><thead><tr><th>Jam</th><th>Ampere Gil 1</th><th>Ampere Gil 2</th><th>Ampere Gil 3</th><th>Ampere Gil 4</th><th>Ampere Gil 5</th><th>Aksi</th></tr></thead><tbody id="tabelBody5"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 6: PEMANAS & EVAPORASI ================= -->
+    <div id="tabEvap" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle6" style="margin-top:0; font-size: 15px;">Input Data Pemanas & Evaporasi</h3>
+            <form id="evapForm">
+                <input type="hidden" id="editId6" value="">
+                <div class="form-group"><label>Tanggal & Jam Pengamatan:</label><div class="datetime-group"><input type="date" id="tglPengamatan6" required><select id="jamPengamatan6" required></select></div></div>
+                <div class="section-title">🔥 SUHU JUICE HEATER (°C)</div>
+                <div class="grid-3">
+                    <div class="form-group"><label>JH 1:</label><input type="number" step="0.1" id="jh1" placeholder="0.0" required></div>
+                    <div class="form-group"><label>JH 2:</label><input type="number" step="0.1" id="jh2" placeholder="0.0" required></div>
+                    <div class="form-group"><label>JH 3:</label><input type="number" step="0.1" id="jh3" placeholder="0.0" required></div>
+                </div>
+                <div class="section-title">💨 TEKANAN UAP (Bar)</div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Uap Baru:</label><input type="number" step="0.01" id="uapBaru" placeholder="0.00" required></div>
+                    <div class="form-group"><label>Uap Bekas:</label><input type="number" step="0.01" id="uapBekas" placeholder="0.00" required></div>
+                </div>
+                <div class="section-title">🎯 VACUUM POMPA & BP AKHIR (cmHg)</div>
+                <div class="grid-3">
+                    <div class="form-group"><label>Vac Pompa 1:</label><input type="number" step="0.1" id="vacPompa1" placeholder="0.0" required></div>
+                    <div class="form-group"><label>Vac Pompa 2:</label><input type="number" step="0.1" id="vacPompa2" placeholder="0.0" required></div>
+                    <div class="form-group"><label>BP Akhir:</label><input type="number" step="0.1" id="bpAkhir" placeholder="0.0" required></div>
+                </div>
+                <div class="section-title">🧪 VACUUM PAN (VP 1 - 9) (cmHg)</div>
+                <div class="grid-3">
+                    <div class="form-group"><label>VP 1:</label><input type="number" step="0.1" id="vp1" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 2:</label><input type="number" step="0.1" id="vp2" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 3:</label><input type="number" step="0.1" id="vp3" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 4:</label><input type="number" step="0.1" id="vp4" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 5:</label><input type="number" step="0.1" id="vp5" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 6:</label><input type="number" step="0.1" id="vp6" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 7:</label><input type="number" step="0.1" id="vp7" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 8:</label><input type="number" step="0.1" id="vp8" placeholder="0.0" required></div>
+                    <div class="form-group"><label>VP 9:</label><input type="number" step="0.1" id="vp9" placeholder="0.0" required></div>
+                </div>
+                <div class="btn-group"><button type="submit" id="btnSubmit6" class="btn-submit">Simpan Data Evaporasi</button><button type="button" id="btnCancel6" class="btn-cancel" style="display:none;" onclick="batalEdit6()">Batal Edit</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal6" style="width: auto; padding: 4px;" onchange="tampilkanData6()"><button onclick="resetFilter6()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Jam</th><th>JH 1</th><th>JH 2</th><th>JH 3</th><th>U. Baru</th><th>U. Bekas</th><th>Pomp 1</th><th>Pomp 2</th><th>BP Akhir</th><th>VP 1</th><th>VP 2</th><th>VP 3</th><th>VP 4</th><th>VP 5</th><th>VP 6</th><th>VP 7</th><th>VP 8</th><th>VP 9</th><th>Aksi</th></tr></thead>
+                    <tbody id="tabelBody6"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 7: MUTU KIMIA & KERAPATAN ================= -->
+    <div id="tabKimia" class="tab-content">
+        <div class="card">
+            <h3 id="formTitle7" style="margin-top:0; font-size: 15px;">Input Data Mutu Kimia & Kerapatan Nira</h3>
+            <form id="kimiaForm">
+                <input type="hidden" id="editId7" value="">
+                <div class="form-group"><label>Tanggal & Jam Pengamatan:</label><div class="datetime-group"><input type="date" id="tglPengamatan7" required><select id="jamPengamatan7" required></select></div></div>
+                <div class="section-title">🧪 PENGAMATAN KERAPATAN & PH</div>
+                <div class="form-group"><label>Bé Susu Kapur (°Bé):</label><input type="number" step="0.1" id="beSusuKapur" placeholder="0.0 °Bé" required></div>
+                <div class="form-group"><label>Bé Nira Kental (°Bé):</label><input type="number" step="0.1" id="beNiraKental" placeholder="0.0 °Bé" required></div>
+                <div class="form-group"><label>pH Nira Mentah Sulfitir:</label><input type="number" step="0.1" id="phNiraSulfitir" placeholder="0.0" required></div>
+                
+                <div class="section-title">📐 PH DEFIKASI (DEF 1 - 3)</div>
+                <div class="grid-3">
+                    <div class="form-group"><label>pH Def 1:</label><input type="number" step="0.1" id="phDef1" placeholder="0.0" required></div>
+                    <div class="form-group"><label>pH Def 2:</label><input type="number" step="0.1" id="phDef2" placeholder="0.0" required></div>
+                    <div class="form-group"><label>pH Def 3:</label><input type="number" step="0.1" id="phDef3" placeholder="0.0" required></div>
+                </div>
+
+                <div class="btn-group"><button type="submit" id="btnSubmit7" class="btn-submit">Simpan Data Mutu Kimia</button><button type="button" id="btnCancel7" class="btn-cancel" style="display:none;" onclick="batalEdit7()">Batal Edit</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <div class="action-bar"><div class="filter-box">🔍 Cari Hari: <input type="date" id="filterTanggal7" style="width: auto; padding: 4px;" onchange="tampilkanData7()"><button onclick="resetFilter7()" style="padding: 4px 8px; font-size: 11px; background:#7f8c8d;">Reset</button></div></div>
+            <div class="table-container">
+                <table><thead><tr><th>Jam</th><th>Bé Susu Kapur</th><th>Bé Nira Kental</th><th>pH Sulfitir</th><th>pH Def 1</th><th>pH Def 2</th><th>pH Def 3</th><th>Aksi</th></tr></thead><tbody id="tabelBody7"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        const request = indexedDB.open("PabrikTerpaduDB", 10);
+
+        function getTanggalSekarang() {
+            let today = new Date();
+            let yyyy = today.getFullYear();
+            let mm = String(today.getMonth() + 1).padStart(2, '0');
+            let dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function initJamDropdown(selectId) {
+            const jamSelect = document.getElementById(selectId);
+            jamSelect.innerHTML = "";
+            for (let i = 0; i < 24; i++) {
+                let jamStr = i.toString().padStart(2, '0') + ":00";
+                let opt = document.createElement('option');
+                opt.value = i; opt.textContent = jamStr;
+                jamSelect.appendChild(opt);
+            }
+        }
+        for (let idx = 1; idx <= 7; idx++) initJamDropdown('jamPengamatan' + idx);
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const tabsMap = { 'tabTebu': 0, 'tabNira': 1, 'tabRpm': 2, 'tabHidrolik': 3, 'tabAmpere': 4, 'tabEvap': 5, 'tabKimia': 6 };
+            document.querySelectorAll('.tab-btn')[tabsMap[tabId]].classList.add('active');
+            if (tabId === 'tabNira') hitungSemuaOtomatis();
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            const stores = ["log_tebu", "log_nira", "log_rpm", "log_hidrolik", "log_ampere", "log_evap", "log_kimia"];
+            stores.forEach(s => {
+                if (!db.objectStoreNames.contains(s)) {
+                    const st = db.createObjectStore(s, { keyPath: "id", autoIncrement: true });
+                    st.createIndex("timestamp", "timestamp", { unique: false });
+                }
+            });
+        };
+
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            mintaPersistentStorage();
+            tampilkanData1(); tampilkanData2(); tampilkanData3();
+            tampilkanData4(); tampilkanData5(); tampilkanData6(); tampilkanData7();
+        };
+
+        function mintaPersistentStorage() {
+            if (navigator.storage && navigator.storage.persist) {
+                navigator.storage.persist().then(p => {
+                    document.getElementById("statusStorage").innerText = p ? "✓ Penyimpanan terproteksi otomatis" : "⚠️ Memori HP terbatas";
+                });
+            }
+        }
+
+        function getHariGiling(d) {
+            let date = new Date(d);
+            if (date.getHours() < 7) { date.setDate(date.getDate() - 1); }
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // FUNGSI UTAMA: MENGATUR TANGGAL & JAM SECARA INDEPENDEN PER TAB
+        function aturTanggalJamPerTab(storeName, tabIndex) {
+            if (!db) return;
+            const tx = db.transaction([storeName], "readonly");
+            tx.objectStore(storeName).getAll().onsuccess = function(e) {
+                const data = e.target.result || [];
+                const editIdVal = document.getElementById('editId' + tabIndex).value;
+                
+                if (!editIdVal) {
+                    if (data.length > 0) {
+                        let maxTimestamp = Math.max(...data.map(d => d.timestamp));
+                        let nextDt = new Date(maxTimestamp + (60 * 60 * 1000));
+                        let yyyy = nextDt.getFullYear();
+                        let mm = String(nextDt.getMonth() + 1).padStart(2, '0');
+                        let dd = String(nextDt.getDate()).padStart(2, '0');
+
+                        document.getElementById('tglPengamatan' + tabIndex).value = `${yyyy}-${mm}-${dd}`;
+                        document.getElementById('jamPengamatan' + tabIndex).value = nextDt.getHours();
+                    } else {
+                        document.getElementById('tglPengamatan' + tabIndex).value = getTanggalSekarang();
+                        document.getElementById('jamPengamatan' + tabIndex).value = 7;
+                    }
+                }
+            };
+        }
+
+        // ================= TAB 1: GILING TEBU =================
+        document.getElementById('tebuForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editId1').value;
+            const tglVal = document.getElementById('tglPengamatan1').value;
+            const jamVal = parseInt(document.getElementById('jamPengamatan1').value);
+            const dt = new Date(tglVal.split('-')[0], tglVal.split('-')[1] - 1, tglVal.split('-')[2], jamVal, 0, 0);
+            const targetTimestamp = dt.getTime();
+
+            const txCheck = db.transaction(["log_tebu"], "readonly");
+            txCheck.objectStore("log_tebu").getAll().onsuccess = function(res) {
+                if ((res.target.result || []).some(item => (!editId || item.id !== parseInt(editId)) && item.timestamp === targetTimestamp)) {
+                    return alert(`🚫 Data Tanggal ${tglVal} Jam ${String(jamVal).padStart(2, '0')}:00 SUDAH ADA!`);
+                }
+                const dataObj = {
+                    tglFormat: tglVal, jamFormat: String(jamVal).padStart(2, '0') + ":00", timestamp: targetTimestamp, hariGiling: getHariGiling(dt),
+                    tonMasuk: parseFloat(document.getElementById('tonMasuk').value) || 0, jumlahLori: parseInt(document.getElementById('jumlahLori').value) || 0,
+                    jumlahTruk: parseInt(document.getElementById('jumlahTruk').value) || 0, tonGiling: parseFloat(document.getElementById('tonGiling').value) || 0
+                };
+                const tx = db.transaction(["log_tebu"], "readwrite");
+                const store = tx.objectStore("log_tebu");
+                if (editId) { dataObj.id = parseInt(editId); store.put(dataObj); } else { store.add(dataObj); }
+                tx.oncomplete = function() { 
+                    alert(`✅ Data Giling Tersimpan!`); 
+                    batalEdit1(); 
+                    tampilkanData1(); 
+                };
+            };
+        });
+
+        function tampilkanData1() {
+            const tbody = document.getElementById('tabelBody1'); tbody.innerHTML = "";
+            const filterTgl = document.getElementById('filterTanggal1').value;
+            const tx = db.transaction(["log_tebu"], "readonly");
+            tx.objectStore("log_tebu").index("timestamp").getAll().onsuccess = function(e) {
+                const data = e.target.result;
+                aturTanggalJamPerTab("log_tebu", 1);
+                
+                let kelompokHari = {}; data.forEach(item => { if (!filterTgl || item.hariGiling === filterTgl || item.tglFormat === filterTgl) { (kelompokHari[item.hariGiling] = kelompokHari[item.hariGiling] || []).push(item); } });
+                let rowsHtml = "";
+                Object.keys(kelompokHari).sort().reverse().forEach(hari => {
+                    let items = kelompokHari[hari].sort((a, b) => a.timestamp - b.timestamp);
+                    rowsHtml += `<tr><td colspan="7" class="header-hari">📅 Hari Giling: ${hari} <button onclick="hapusDataPerHari('${hari}')" class="btn-delete-day">🗑️ Hapus Hari Ini</button></td></tr>`;
+                    let runningTotal = 0;
+                    items.forEach(item => {
+                        runningTotal += item.tonGiling;
+                        
+                        const waText = 
+                            `*LAPORAN GILING TEBU*\n` +
+                            `📅 Tanggal: ${item.tglFormat}\n` +
+                            `⏰ Jam: ${item.jamFormat} WIB\n` +
+                            `-----------------------------------\n` +
+                            `🚛 Tebu Masuk: ${item.tonMasuk.toFixed(2)} Ton\n` +
+                            `🚃 Jumlah Lori: ${item.jumlahLori} Lori\n` +
+                            `🚚 Jumlah Truk: ${item.jumlahTruk} Truk\n` +
+                            `⚙️ Tebu Giling Jam Ini: ${item.tonGiling.toFixed(2)} Ton\n` +
+                            `📊 Total Giling s/d Jam Ini: ${runningTotal.toFixed(2)} Ton`;
+
+                        rowsHtml += `<tr><td><b>${item.jamFormat}</b></td><td>${item.tonMasuk.toFixed(2)}</td><td>${item.jumlahLori}</td><td>${item.jumlahTruk}</td><td>${item.tonGiling.toFixed(2)}</td><td class="highlight-col">${runningTotal.toFixed(2)}</td><td><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}" target="_blank" class="btn-action btn-wa">📱</a> <button onclick="editData1(${item.id})" class="btn-action btn-edit-row">✏️</button> <button onclick="hapusBaris('log_tebu', ${item.id}, tampilkanData1)" class="btn-action btn-delete-row">🗑️</button></td></tr>`;
+                    });
+                });
+                tbody.innerHTML = rowsHtml || `<tr><td colspan="7">Tidak ada data.</td></tr>`;
+            };
+        }
+        function editData1(id) { db.transaction(["log_tebu"], "readonly").objectStore("log_tebu").get(id).onsuccess = function(e) { const i = e.target.result; if(i) { document.getElementById('editId1').value = i.id; document.getElementById('tglPengamatan1').value = i.tglFormat; document.getElementById('jamPengamatan1').value = parseInt(i.jamFormat); document.getElementById('tonMasuk').value = i.tonMasuk; document.getElementById('jumlahLori').value = i.jumlahLori; document.getElementById('jumlahTruk').value = i.jumlahTruk; document.getElementById('tonGiling').value = i.tonGiling; document.getElementById('formTitle1').innerText = "✏️ Edit Data Jam " + i.jamFormat; document.getElementById('btnSubmit1').className = "btn-update"; document.getElementById('btnCancel1').style.display = "inline-block"; } }; }
+        function batalEdit1() { document.getElementById('editId1').value = ""; document.getElementById('tebuForm').reset(); document.getElementById('formTitle1').innerText = "Input Data Jam Pengamatan (Giling Tebu)"; document.getElementById('btnSubmit1').className = "btn-submit"; document.getElementById('btnCancel1').style.display = "none"; aturTanggalJamPerTab("log_tebu", 1); }
+
+        // ================= TAB 2: NIRA MENTAH & IMBIBISI =================
+        function hitungSemuaOtomatis() {
+            const tglVal = document.getElementById('tglPengamatan2').value, jamVal = parseInt(document.getElementById('jamPengamatan2').value);
+            const tonNira = parseFloat(document.getElementById('tonNira').value) || 0, tonImbibisi = parseFloat(document.getElementById('tonImbibisi').value) || 0;
+            if (!tglVal) return;
+            const targetTimestamp = new Date(tglVal.split('-')[0], tglVal.split('-')[1] - 1, tglVal.split('-')[2], jamVal, 0, 0).getTime();
+            db.transaction(["log_tebu"], "readonly").objectStore("log_tebu").getAll().onsuccess = function(e) {
+                const itemTebu = e.target.result.find(d => d.timestamp === targetTimestamp);
+                if (itemTebu && itemTebu.tonGiling > 0) {
+                    document.getElementById('persenTebu').value = tonNira > 0 ? ((tonNira * 1.03) / itemTebu.tonGiling).toFixed(2) + " %" : "Masukkan Ton Nira";
+                    document.getElementById('persenImbibisi').value = tonImbibisi > 0 ? (((tonImbibisi * 0.995) / itemTebu.tonGiling) * 100).toFixed(2) + " %" : "Masukkan Ton Imbibisi";
+                } else { document.getElementById('persenTebu').value = "⚠️ Data Tab 1 Belum Ada"; document.getElementById('persenImbibisi').value = "⚠️ Data Tab 1 Belum Ada"; }
+            };
+        }
+        document.getElementById('niraForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editId2').value, tglVal = document.getElementById('tglPengamatan2').value, jamVal = parseInt(document.getElementById('jamPengamatan2').value);
+            const dt = new Date(tglVal.split('-')[0], tglVal.split('-')[1] - 1, tglVal.split('-')[2], jamVal, 0, 0), targetTimestamp = dt.getTime();
+            db.transaction(["log_tebu"], "readonly").objectStore("log_tebu").getAll().onsuccess = function(req) {
+                const itemTebu = req.target.result.find(d => d.timestamp === targetTimestamp);
+                if (!itemTebu || itemTebu.tonGiling <= 0) return alert(`🚫 Data Tebu Giling Tab 1 Tanggal ${tglVal} Jam ${jamVal}:00 BELUM ADA!`);
+                const tonNira = parseFloat(document.getElementById('tonNira').value) || 0, tonImbibisi = parseFloat(document.getElementById('tonImbibisi').value) || 0;
+                const dataObj = { 
+                    tglFormat: tglVal, jamFormat: String(jamVal).padStart(2, '0') + ":00", timestamp: targetTimestamp, hariGiling: getHariGiling(dt), 
+                    jumlahBak: parseInt(document.getElementById('jumlahBak').value) || 0, tonNira: tonNira, persenKotoran: parseFloat(document.getElementById('persenKotoran').value) || 0, 
+                    persenTebu: parseFloat(((tonNira * 1.03) / itemTebu.tonGiling).toFixed(2)), jumlahBakImbibisi: parseInt(document.getElementById('jumlahBakImbibisi').value) || 0, 
+                    tonImbibisi: tonImbibisi, suhuImbibisi: parseFloat(document.getElementById('suhuImbibisi').value) || 0,
+                    persenImbibisi: parseFloat((((tonImbibisi * 0.995) / itemTebu.tonGiling) * 100).toFixed(2)) 
+                };
+                const tx = db.transaction(["log_nira"], "readwrite");
+                if (editId) { dataObj.id = parseInt(editId); tx.objectStore("log_nira").put(dataObj); } else { tx.objectStore("log_nira").add(dataObj); }
+                tx.oncomplete = function() { 
+                    alert("✅ Data Nira Tersimpan!"); 
+                    batalEdit2(); 
+                    tampilkanData2(); 
+                };
+            };
+        });
+
+        function tampilkanData2() {
+            const tbody = document.getElementById('tabelBody2'); tbody.innerHTML = "";
+            const filterTgl = document.getElementById('filterTanggal2').value;
+            db.transaction(["log_nira"], "readonly").objectStore("log_nira").index("timestamp").getAll().onsuccess = function(e) {
+                aturTanggalJamPerTab("log_nira", 2);
+                let kelompokHari = {}; e.target.result.forEach(item => { if (!filterTgl || item.hariGiling === filterTgl) { (kelompokHari[item.hariGiling] = kelompokHari[item.hariGiling] || []).push(item); } });
+                let rowsHtml = "";
+                Object.keys(kelompokHari).sort().reverse().forEach(hari => {
+                    rowsHtml += `<tr><td colspan="10" class="header-hari">📅 Nira & Imbibisi Hari Giling: ${hari}</td></tr>`;
+                    kelompokHari[hari].sort((a, b) => a.timestamp - b.timestamp).forEach(item => {
+                        
+                        const waText = 
+                            `*LAPORAN NIRA MENTAH & IMBIBISI*\n` +
+                            `📅 Tanggal: ${item.tglFormat}\n` +
+                            `⏰ Jam: ${item.jamFormat} WIB\n` +
+                            `-----------------------------------\n` +
+                            `🧪 *NIRA MENTAH*\n` +
+                            `• Jml Bak Nira: ${item.jumlahBak} Bak\n` +
+                            `• Ton Nira Mentah: ${item.tonNira.toFixed(2)} Ton\n` +
+                            `• % Koreksi Kotoran: ${item.persenKotoran.toFixed(2)} %\n` +
+                            `• % Tebu: ${item.persenTebu.toFixed(2)} %\n\n` +
+                            `💧 *IMBIBISI*\n` +
+                            `• Jml Bak Imbibisi: ${item.jumlahBakImbibisi} Bak\n` +
+                            `• Ton Imbibisi: ${item.tonImbibisi.toFixed(2)} Ton\n` +
+                            `• % Imbibisi: ${item.persenImbibisi.toFixed(2)} %\n` +
+                            `• Suhu Imbibisi: ${(item.suhuImbibisi || 0).toFixed(1)} °C`;
+
+                        rowsHtml += `<tr><td><b>${item.jamFormat}</b></td><td>${item.jumlahBak}</td><td>${item.tonNira.toFixed(2)}</td><td>${item.persenKotoran.toFixed(2)}%</td><td class="highlight-col">${item.persenTebu.toFixed(2)}%</td><td>${item.jumlahBakImbibisi}</td><td>${item.tonImbibisi.toFixed(2)}</td><td style="background-color: #ebf5fb; font-weight: bold; color: #2980b9;">${item.persenImbibisi.toFixed(2)}%</td><td>${(item.suhuImbibisi || 0).toFixed(1)} °C</td><td><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}" target="_blank" class="btn-action btn-wa">📱</a> <button onclick="editData2(${item.id})" class="btn-action btn-edit-row">✏️</button> <button onclick="hapusBaris('log_nira', ${item.id}, tampilkanData2)" class="btn-action btn-delete-row">🗑️</button></td></tr>`;
+                    });
+                });
+                tbody.innerHTML = rowsHtml || `<tr><td colspan="10">Tidak ada data.</td></tr>`;
+            };
+        }
+        function editData2(id) { db.transaction(["log_nira"], "readonly").objectStore("log_nira").get(id).onsuccess = function(e) { const i = e.target.result; if(i) { document.getElementById('editId2').value = i.id; document.getElementById('tglPengamatan2').value = i.tglFormat; document.getElementById('jamPengamatan2').value = parseInt(i.jamFormat); document.getElementById('jumlahBak').value = i.jumlahBak; document.getElementById('tonNira').value = i.tonNira; document.getElementById('persenKotoran').value = i.persenKotoran; document.getElementById('jumlahBakImbibisi').value = i.jumlahBakImbibisi; document.getElementById('tonImbibisi').value = i.tonImbibisi; document.getElementById('suhuImbibisi').value = i.suhuImbibisi || 0; document.getElementById('formTitle2').innerText = "✏️ Edit Data Jam " + i.jamFormat; document.getElementById('btnSubmit2').className = "btn-update"; document.getElementById('btnCancel2').style.display = "inline-block"; hitungSemuaOtomatis(); } }; }
+        function batalEdit2() { document.getElementById('editId2').value = ""; document.getElementById('niraForm').reset(); document.getElementById('formTitle2').innerText = "Input Data Nira Mentah & Imbibisi"; document.getElementById('btnSubmit2').className = "btn-submit"; document.getElementById('btnCancel2').style.display = "none"; aturTanggalJamPerTab("log_nira", 2); }
+
+        // ================= LOGIKA MODEL STANDAR (TAB 3, 4, 5, 6, 7) =================
+        function buatHandlerForm(formId, storeName, editIdInput, tglInput, jamInput, fields, titleId, defaultTitle, fnTampil, tabIdx) {
+            document.getElementById(formId).addEventListener('submit', function(e) {
+                e.preventDefault();
+                const editId = document.getElementById(editIdInput).value, tglVal = document.getElementById(tglInput).value, jamVal = parseInt(document.getElementById(jamInput).value);
+                const dt = new Date(tglVal.split('-')[0], tglVal.split('-')[1] - 1, tglVal.split('-')[2], jamVal, 0, 0);
+                const dataObj = { tglFormat: tglVal, jamFormat: String(jamVal).padStart(2, '0') + ":00", timestamp: dt.getTime(), hariGiling: getHariGiling(dt) };
+                fields.forEach(f => dataObj[f] = parseFloat(document.getElementById(f).value) || 0);
+                const tx = db.transaction([storeName], "readwrite");
+                if (editId) { dataObj.id = parseInt(editId); tx.objectStore(storeName).put(dataObj); } else { tx.objectStore(storeName).add(dataObj); }
+                tx.oncomplete = function() { 
+                    alert("✅ Data Berhasil Disimpan!"); 
+                    document.getElementById(editIdInput).value = ""; 
+                    document.getElementById(formId).reset(); 
+                    document.getElementById(titleId).innerText = defaultTitle; 
+                    fnTampil(); 
+                };
+            });
+        }
+
+        buatHandlerForm('rpmForm', 'log_rpm', 'editId3', 'tglPengamatan3', 'jamPengamatan3', ['rpm1','rpm2','rpm3','rpm4','rpm5'], 'formTitle3', 'Input Data RPM Gilingan 1 - 5', tampilkanData3, 3);
+        buatHandlerForm('hidrolikForm', 'log_hidrolik', 'editId4', 'tglPengamatan4', 'jamPengamatan4', ['hidrolik1','hidrolik2','hidrolik3','hidrolik4','hidrolik5'], 'formTitle4', 'Input Data Tekanan Hidrolik Gilingan 1 - 5', tampilkanData4, 4);
+        buatHandlerForm('ampereForm', 'log_ampere', 'editId5', 'tglPengamatan5', 'jamPengamatan5', ['ampere1','ampere2','ampere3','ampere4','ampere5'], 'formTitle5', 'Input Data Ampere Gilingan 1 - 5', tampilkanData5, 5);
+        buatHandlerForm('evapForm', 'log_evap', 'editId6', 'tglPengamatan6', 'jamPengamatan6', ['jh1','jh2','jh3','uapBaru','uapBekas','vacPompa1','vacPompa2','bpAkhir','vp1','vp2','vp3','vp4','vp5','vp6','vp7','vp8','vp9'], 'formTitle6', 'Input Data Pemanas & Evaporasi', tampilkanData6, 6);
+        buatHandlerForm('kimiaForm', 'log_kimia', 'editId7', 'tglPengamatan7', 'jamPengamatan7', ['beSusuKapur','beNiraKental','phNiraSulfitir','phDef1','phDef2','phDef3'], 'formTitle7', 'Input Data Mutu Kimia & Kerapatan Nira', tampilkanData7, 7);
+
+        function tampilkanTabelStandar(storeName, tbodyId, filterId, colKeys, unit, waTitle, tabIdx) {
+            const tbody = document.getElementById(tbodyId); tbody.innerHTML = "";
+            const filterTgl = document.getElementById(filterId).value;
+            db.transaction([storeName], "readonly").objectStore(storeName).index("timestamp").getAll().onsuccess = function(e) {
+                aturTanggalJamPerTab(storeName, tabIdx);
+                let kelompokHari = {}; e.target.result.forEach(i => { if (!filterTgl || i.hariGiling === filterTgl) { (kelompokHari[i.hariGiling] = kelompokHari[i.hariGiling] || []).push(i); } });
+                let rowsHtml = "";
+                Object.keys(kelompokHari).sort().reverse().forEach(hari => {
+                    rowsHtml += `<tr><td colspan="${colKeys.length + 2}" class="header-hari">📅 Hari Giling: ${hari}</td></tr>`;
+                    kelompokHari[hari].sort((a, b) => a.timestamp - b.timestamp).forEach(i => {
+                        let valCols = colKeys.map(k => `<td>${(i[k] || 0).toFixed(1)} ${unit}</td>`).join('');
+                        let waText = encodeURIComponent(`*${waTitle}*\n📅 ${i.tglFormat} | ⏰ ${i.jamFormat}\n` + colKeys.map(k => `• ${k}: ${(i[k] || 0)} ${unit}`).join('\n'));
+                        rowsHtml += `<tr><td><b>${i.jamFormat}</b></td>${valCols}<td><a href="https://api.whatsapp.com/send?text=${waText}" target="_blank" class="btn-action btn-wa">📱</a> <button onclick="editGeneric('${storeName}', ${i.id})" class="btn-action btn-edit-row">✏️</button> <button onclick="hapusBaris('${storeName}', ${i.id}, window['tampilkanData' + storeName.replace('log_','').charAt(0).toUpperCase() + storeName.replace('log_','').slice(1)])" class="btn-action btn-delete-row">🗑️</button></td></tr>`;
+                    });
+                });
+                tbody.innerHTML = rowsHtml || `<tr><td colspan="${colKeys.length + 2}">Tidak ada data.</td></tr>`;
+            };
+        }
+
+        function tampilkanData3() { tampilkanTabelStandar('log_rpm', 'tabelBody3', 'filterTanggal3', ['rpm1','rpm2','rpm3','rpm4','rpm5'], 'RPM', 'LAPORAN RPM GILINGAN', 3); }
+        function tampilkanData4() { tampilkanTabelStandar('log_hidrolik', 'tabelBody4', 'filterTanggal4', ['hidrolik1','hidrolik2','hidrolik3','hidrolik4','hidrolik5'], '', 'LAPORAN HIDROLIK GILINGAN', 4); }
+        function tampilkanData5() { tampilkanTabelStandar('log_ampere', 'tabelBody5', 'filterTanggal5', ['ampere1','ampere2','ampere3','ampere4','ampere5'], 'A', 'LAPORAN AMPERE GILINGAN', 5); }
+        
+        // TAB 6: EVAPORASI
+        function tampilkanData6() {
+            const tbody = document.getElementById('tabelBody6'); tbody.innerHTML = "";
+            const filterTgl = document.getElementById('filterTanggal6').value;
+            db.transaction(["log_evap"], "readonly").objectStore("log_evap").index("timestamp").getAll().onsuccess = function(e) {
+                aturTanggalJamPerTab("log_evap", 6);
+                let kelompokHari = {}; e.target.result.forEach(i => { if (!filterTgl || i.hariGiling === filterTgl) { (kelompokHari[i.hariGiling] = kelompokHari[i.hariGiling] || []).push(i); } });
+                let rowsHtml = "";
+                Object.keys(kelompokHari).sort().reverse().forEach(hari => {
+                    rowsHtml += `<tr><td colspan="19" class="header-hari">📅 Evaporasi Hari Giling: ${hari}</td></tr>`;
+                    kelompokHari[hari].sort((a, b) => a.timestamp - b.timestamp).forEach(i => {
+                        const waText = 
+                            `*LAPORAN PEMANAS & EVAPORASI*\n` +
+                            `📅 Tanggal: ${i.tglFormat}\n` +
+                            `⏰ Jam: ${i.jamFormat} WIB\n` +
+                            `-----------------------------------\n` +
+                            `🔥 *JUICE HEATER (°C)*\n` +
+                            `• JH 1: ${(i.jh1||0).toFixed(1)} | JH 2: ${(i.jh2||0).toFixed(1)} | JH 3: ${(i.jh3||0).toFixed(1)}\n\n` +
+                            `💨 *TEKANAN UAP (Bar)*\n` +
+                            `• Uap Baru: ${(i.uapBaru||0).toFixed(2)}\n` +
+                            `• Uap Bekas: ${(i.uapBekas||0).toFixed(2)}\n\n` +
+                            `🎯 *VACUUM POMPA & BP AKHIR (cmHg)*\n` +
+                            `• Pompa 1: ${(i.vacPompa1||0).toFixed(1)} | Pompa 2: ${(i.vacPompa2||0).toFixed(1)}\n` +
+                            `• BP Akhir: ${(i.bpAkhir||0).toFixed(1)}\n\n` +
+                            `🧪 *VACUUM PAN (cmHg)*\n` +
+                            `• VP 1-3: ${(i.vp1||0).toFixed(1)} | ${(i.vp2||0).toFixed(1)} | ${(i.vp3||0).toFixed(1)}\n` +
+                            `• VP 4-6: ${(i.vp4||0).toFixed(1)} | ${(i.vp5||0).toFixed(1)} | ${(i.vp6||0).toFixed(1)}\n` +
+                            `• VP 7-9: ${(i.vp7||0).toFixed(1)} | ${(i.vp8||0).toFixed(1)} | ${(i.vp9||0).toFixed(1)}`;
+
+                        rowsHtml += `<tr><td><b>${i.jamFormat}</b></td><td>${i.jh1}</td><td>${i.jh2}</td><td>${i.jh3}</td><td>${i.uapBaru}</td><td>${i.uapBekas}</td><td>${i.vacPompa1}</td><td>${i.vacPompa2}</td><td>${i.bpAkhir}</td><td>${i.vp1}</td><td>${i.vp2}</td><td>${i.vp3}</td><td>${i.vp4}</td><td>${i.vp5}</td><td>${i.vp6}</td><td>${i.vp7}</td><td>${i.vp8}</td><td>${i.vp9}</td><td><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}" target="_blank" class="btn-action btn-wa">📱</a> <button onclick="editGeneric('log_evap', ${i.id})" class="btn-action btn-edit-row">✏️</button> <button onclick="hapusBaris('log_evap', ${i.id}, tampilkanData6)" class="btn-action btn-delete-row">🗑️</button></td></tr>`;
+                    });
+                });
+                tbody.innerHTML = rowsHtml || `<tr><td colspan="19">Tidak ada data.</td></tr>`;
+            };
+        }
+
+        // TAB 7: MUTU KIMIA
+        function tampilkanData7() {
+            const tbody = document.getElementById('tabelBody7'); tbody.innerHTML = "";
+            const filterTgl = document.getElementById('filterTanggal7').value;
+            db.transaction(["log_kimia"], "readonly").objectStore("log_kimia").index("timestamp").getAll().onsuccess = function(e) {
+                aturTanggalJamPerTab("log_kimia", 7);
+                let kelompokHari = {}; e.target.result.forEach(i => { if (!filterTgl || i.hariGiling === filterTgl) { (kelompokHari[i.hariGiling] = kelompokHari[i.hariGiling] || []).push(i); } });
+                let rowsHtml = "";
+                Object.keys(kelompokHari).sort().reverse().forEach(hari => {
+                    rowsHtml += `<tr><td colspan="8" class="header-hari">📅 Mutu Kimia Hari Giling: ${hari}</td></tr>`;
+                    kelompokHari[hari].sort((a, b) => a.timestamp - b.timestamp).forEach(i => {
+                        const waText = 
+                            `*LAPORAN MUTU KIMIA*\n` +
+                            `📅 Tanggal: ${i.tglFormat}\n` +
+                            `⏰ Jam: ${i.jamFormat} WIB\n` +
+                            `-----------------------------------\n` +
+                            `• Bé Susu Kapur: ${(i.beSusuKapur||0).toFixed(1)} °Bé\n` +
+                            `• Bé Nira Kental: ${(i.beNiraKental||0).toFixed(1)} °Bé\n` +
+                            `• pH Sulfitir: ${(i.phNiraSulfitir||0).toFixed(1)}\n` +
+                            `• pH Defikasi 1: ${(i.phDef1||0).toFixed(1)}\n` +
+                            `• pH Defikasi 2: ${(i.phDef2||0).toFixed(1)}\n` +
+                            `• pH Defikasi 3: ${(i.phDef3||0).toFixed(1)}`;
+
+                        rowsHtml += `<tr><td><b>${i.jamFormat}</b></td><td>${(i.beSusuKapur||0).toFixed(1)}</td><td>${(i.beNiraKental||0).toFixed(1)}</td><td>${(i.phNiraSulfitir||0).toFixed(1)}</td><td>${(i.phDef1||0).toFixed(1)}</td><td>${(i.phDef2||0).toFixed(1)}</td><td>${(i.phDef3||0).toFixed(1)}</td><td><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}" target="_blank" class="btn-action btn-wa">📱</a> <button onclick="editGeneric('log_kimia', ${i.id})" class="btn-action btn-edit-row">✏️</button> <button onclick="hapusBaris('log_kimia', ${i.id}, tampilkanData7)" class="btn-action btn-delete-row">🗑️</button></td></tr>`;
+                    });
+                });
+                tbody.innerHTML = rowsHtml || `<tr><td colspan="8">Tidak ada data.</td></tr>`;
+            };
+        }
+
+        function editGeneric(storeName, id) {
+            db.transaction([storeName], "readonly").objectStore(storeName).get(id).onsuccess = function(e) {
+                const item = e.target.result; if(!item) return;
+                const mapIdx = { 'log_rpm':3, 'log_hidrolik':4, 'log_ampere':5, 'log_evap':6, 'log_kimia':7 }[storeName];
+                document.getElementById('editId' + mapIdx).value = item.id;
+                document.getElementById('tglPengamatan' + mapIdx).value = item.tglFormat;
+                document.getElementById('jamPengamatan' + mapIdx).value = parseInt(item.jamFormat);
+                Object.keys(item).forEach(k => { if(document.getElementById(k)) document.getElementById(k).value = item[k]; });
+                document.getElementById('btnSubmit' + mapIdx).className = "btn-update";
+                document.getElementById('btnCancel' + mapIdx).style.display = "inline-block";
+            };
+        }
+
+        function batalEdit3() { document.getElementById('editId3').value = ""; document.getElementById('rpmForm').reset(); document.getElementById('btnSubmit3').className = "btn-submit"; document.getElementById('btnCancel3').style.display = "none"; aturTanggalJamPerTab("log_rpm", 3); }
+        function batalEdit4() { document.getElementById('editId4').value = ""; document.getElementById('hidrolikForm').reset(); document.getElementById('btnSubmit4').className = "btn-submit"; document.getElementById('btnCancel4').style.display = "none"; aturTanggalJamPerTab("log_hidrolik", 4); }
+        function batalEdit5() { document.getElementById('editId5').value = ""; document.getElementById('ampereForm').reset(); document.getElementById('btnSubmit5').className = "btn-submit"; document.getElementById('btnCancel5').style.display = "none"; aturTanggalJamPerTab("log_ampere", 5); }
+        function batalEdit6() { document.getElementById('editId6').value = ""; document.getElementById('evapForm').reset(); document.getElementById('btnSubmit6').className = "btn-submit"; document.getElementById('btnCancel6').style.display = "none"; aturTanggalJamPerTab("log_evap", 6); }
+        function batalEdit7() { document.getElementById('editId7').value = ""; document.getElementById('kimiaForm').reset(); document.getElementById('btnSubmit7').className = "btn-submit"; document.getElementById('btnCancel7').style.display = "none"; aturTanggalJamPerTab("log_kimia", 7); }
+
+        function hapusBaris(storeName, id, fnRefresh) {
+            if (confirm("Hapus data jam ini?")) {
+                const tx = db.transaction([storeName], "readwrite");
+                tx.objectStore(storeName).delete(id);
+                tx.oncomplete = function() { 
+                    fnRefresh(); 
+                };
+            }
+        }
+
+        for (let i = 1; i <= 7; i++) { window['resetFilter' + i] = function() { document.getElementById('filterTanggal' + i).value = ""; window['tampilkanData' + i](); }; }
+
+        function exportToCSV1() {
+            db.transaction(["log_tebu"], "readonly").objectStore("log_tebu").index("timestamp").getAll().onsuccess = function(e) {
+                const data = e.target.result; if (!data.length) return alert("Tidak ada data!");
+                let csv = "data:text/csv;charset=utf-8,Hari Giling,Tanggal,Jam,Masuk (Ton),Lori,Truk,Giling (Ton)\n";
+                data.forEach(i => { csv += `${i.hariGiling},${i.tglFormat},${i.jamFormat},${i.tonMasuk},${i.jumlahLori},${i.jumlahTruk},${i.tonGiling}\n`; });
+                const link = document.createElement("a"); link.href = encodeURI(csv); link.download = `Rekap_Giling_${new Date().toISOString().slice(0,10)}.csv`; link.click();
+            };
+        }
+
+        // BACKUP & RESTORE PUSAT
+        function backupData() {
+            const stores = ["log_tebu", "log_nira", "log_rpm", "log_hidrolik", "log_ampere", "log_evap", "log_kimia"];
+            const tx = db.transaction(stores, "readonly");
+            let backupObj = {};
+            stores.forEach(s => { backupObj[s] = tx.objectStore(s).getAll(); });
+            tx.oncomplete = function() {
+                let finalObj = {};
+                stores.forEach(s => finalObj[s] = backupObj[s].result);
+                const blob = new Blob([JSON.stringify(finalObj, null, 2)], { type: "application/json" });
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+                link.download = `Backup_PabrikTerpadu_Lengkap_${new Date().toISOString().slice(0,10)}.json`; link.click();
+            };
+        }
+
+        function triggerRestore() { document.getElementById('fileRestore').click(); }
+
+        function restoreData(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const stores = ["log_tebu", "log_nira", "log_rpm", "log_hidrolik", "log_ampere", "log_evap", "log_kimia"];
+                    if (confirm("Memulihkan SELURUH DATA dari file backup?")) {
+                        const tx = db.transaction(stores, "readwrite");
+                        stores.forEach(s => {
+                            if (data[s]) {
+                                const store = tx.objectStore(s);
+                                store.getAll().onsuccess = function(eStore) {
+                                    const tsSet = new Set(eStore.target.result.map(d => d.timestamp));
+                                    data[s].forEach(item => { delete item.id; if (!tsSet.has(item.timestamp)) store.add(item); });
+                                };
+                            }
+                        });
+                        tx.oncomplete = function() {
+                            alert("✅ Pemulihan Seluruh Data Selesai!");
+                            for (let i = 1; i <= 7; i++) window['tampilkanData' + i]();
+                        };
+                    }
+                } catch (err) { alert("File backup tidak valid!"); }
+            };
+            reader.readAsText(file);
+        }
+
+        function hapusDataPerHari(targetHari) {
+            if (confirm(`Hapus data Hari Giling (${targetHari}) di SEMUA TAB?`)) {
+                const stores = ["log_tebu", "log_nira", "log_rpm", "log_hidrolik", "log_ampere", "log_evap", "log_kimia"];
+                const tx = db.transaction(stores, "readwrite");
+                stores.forEach(s => {
+                    const st = tx.objectStore(s);
+                    st.getAll().onsuccess = function(e) { e.target.result.forEach(i => { if (i.hariGiling === targetHari) st.delete(i.id); }); };
+                });
+                tx.oncomplete = function() { 
+                    for (let i = 1; i <= 7; i++) window['tampilkanData' + i](); 
+                };
+            }
+        }
+
+        function hapusSemuaData() {
+            if (confirm("⚠️ PERINGATAN 1: Hapus SELURUH data pabrik di semua 7 Tab?") && confirm("🚨 PERINGATAN 2: Data terhapus PERMANEN. Yakin?")) {
+                const stores = ["log_tebu", "log_nira", "log_rpm", "log_hidrolik", "log_ampere", "log_evap", "log_kimia"];
+                const tx = db.transaction(stores, "readwrite");
+                stores.forEach(s => tx.objectStore(s).clear());
+                tx.oncomplete = function() { 
+                    alert("✅ Semua data berhasil dihapus."); 
+                    for (let i = 1; i <= 7; i++) window['tampilkanData' + i](); 
+                };
+            }
+        }
+    </script>
+</body>
+</html>
